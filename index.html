@@ -277,7 +277,10 @@ dialog input { font: inherit; padding: 10px; border: 1px solid var(--line); bord
     const c = el("button", "check", "✓"); c.type = "button";
     c.setAttribute("aria-label", (it.status === "comprado" ? "Desmarcar " : "Marcar comprado: ") + it.camisa + " " + it.talla);
     c.setAttribute("aria-pressed", String(it.status === "comprado"));
-    c.addEventListener("click", () => setStatus(it, it.status === "comprado" ? "pendente" : "comprado"));
+    c.addEventListener("click", () => {
+      if (it.status === "comprado") setStatus(it, it.statusAntes && it.statusAntes !== "comprado" ? it.statusAntes : "pendente", { statusAntes: null });
+      else setStatus(it, "comprado", { statusAntes: it.status });
+    });
     const w = el("div", "what");
     w.append(el("span", "nm", it.camisa + (showStore ? " · " + it.loja : "")));
     const meta = [it.pedidos, it.codigo ? "cód. " + it.codigo : "", it.obs].filter(Boolean).join(" · ");
