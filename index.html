@@ -67,6 +67,8 @@ details.brand > summary::-webkit-details-marker { display: none; }
 details[open] .chev { transform: rotate(90deg); }
 .badge { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
 .badge.ok { background: var(--ok-soft); color: var(--ok); }
+.badge.esg { background: var(--bad-soft); color: var(--bad); }
+.item.out .check { border-style: dashed; }
 .sum2 { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
 .mini { height: 5px; background: var(--idle-soft); border-radius: 3px; overflow: hidden; }
 .mini i { display: block; height: 100%; background: var(--ok); }
@@ -225,61 +227,55 @@ dialog input { font: inherit; padding: 10px; border: 1px solid var(--line); bord
     if (entrega && entrega.nome) m.append(el("p", "ship", "Entregar para " + entrega.nome + (entrega.endereco ? " · " + entrega.endereco : "")));
     const names = [...new Set(STORE_ORDER.concat(items.map((i) => i.loja)))];
     let shown = 0;
+    const rank = { pendente: 0, confirmar: 1, esgotado: 2, comprado: 3 };
     for (const name of names) {
-      const all = items.filter((i) => i.loja === name && i.status !== "esgotado");
+      const brandAll = items.filter((i) => i.loja === name)
+        .sort((a, b) => ((rank[a.status] ?? 0) - (rank[b.status] ?? 0)) || (a.ordem || 0) - (b.ordem || 0));
+      const all = brandAll.filter((i) => i.status !== "esgotado");
       const pend = all.filter((i) => i.status !== "comprado");
-      const list = mode === "falta" ? pend : all;
+      const esg = brandAll.filter((i) => i.status === "esgotado");
+      const list = mode === "falta" ? brandAll.filter((i) => i.status !== "comprado") : brandAll;
       if (!list.length) continue;
       shown++;
       const L = lojas[name] || {};
       const t = all.reduce((a, i) => a + i.qtd, 0), g = all.filter((i) => i.status === "comprado").reduce((a, i) => a + i.qtd, 0);
       const pn = pend.reduce((a, i) => a + i.qtd, 0), ps = pend.reduce((a, i) => a + i.preco * i.qtd, 0);
+      const en = esg.reduce((a, i) => a + i.qtd, 0);
       const d = el("details", "brand"); d.id = "brand-" + name.replace(/\W+/g, "-").toLowerCase();
       if (openState[name]) d.open = true;
       d.addEventListener("toggle", () => { openState[name] = d.open; });
       const s = el("summary");
       const s1 = el("div", "sum1");
-      s1.append(el("span", "chev", "›"), el("b", "", name), el("span", "badge" + (pn ? "" : " ok"), pn ? "falta " + pn : "completo"));
+      s1.append(el("span", "chev", "›"), el("b", "", name));
+      if (pn || t) s1.append(el("span", "badge" + (pn ? "" : " ok"), pn ? "falta " + pn : "completo"));
+      if (en) s1.append(el("span", "badge esg", en + " esg."));
       const s2 = el("div", "sum2");
-      s2.append(el("span", "num", pn ? sol(ps) + " · ≈ " + brl(ps * cfg.cambio) : "tudo comprado"), el("span", "num", g + "/" + t));
+      s2.append(el("span", "num", pn ? sol(ps) + " · ≈ " + brl(ps * cfg.cambio) : (t ? "tudo comprado" : "só esgotadas — resolver com o cliente")), el("span", "num", t ? g + "/" + t : ""));
       const mini = el("div", "mini"); const mi = el("i"); mi.style.width = (t ? g / t * 100 : 0) + "%"; mini.append(mi);
       s.append(s1, s2, mini);
       d.append(s);
       const body = el("div", "body");
-      if (L.alerta && pn) body.append(el("div", "alert", L.alerta));
+      if (L.alerta && (pn || en)) body.append(el("div", "alert", L.alerta));
       if (L.site) { const a = el("a", "open", "Abrir loja ↗"); a.href = L.site; a.target = "_blank"; a.rel = "noopener"; body.append(a); }
       const info = el("div", "info");
       for (const [k, lab] of [["comoComprar", "Como comprar"], ["pagamento", "Pagamento"], ["frete", "Frete"], ["lojaFisica", "Loja física"], ["contato", "Contato"]]) {
         if (!L[k]) continue; const x = el("div"); x.append(el("span", "", lab), el("span", "", L[k])); info.append(x);
       }
-      if (info.children.length && pn) body.append(info);
+      if (info.children.length && (pn || en)) body.append(info);
       const box = el("div", "items");
       for (const it of list) box.append(row(it));
       body.append(box);
       d.append(body);
       m.append(d);
     }
-    const outs = items.filter((i) => i.status === "esgotado");
-    if (outs.length) {
-      const d = el("details", "brand"); if (openState.__out) d.open = true;
-      d.addEventListener("toggle", () => { openState.__out = d.open; });
-      const s = el("summary"); const s1 = el("div", "sum1");
-      s1.append(el("span", "chev", "›"), el("b", "", "Esgotadas"), el("span", "badge", outs.reduce((a, i) => a + i.qtd, 0) + " p/ resolver"));
-      s.append(s1, el("div", "sum2", "Falar com o cliente: trocar tamanho/modelo ou devolver o sinal"));
-      d.append(s);
-      const body = el("div", "body"); const box = el("div", "items");
-      for (const it of outs) box.append(row(it, true));
-      body.append(box); d.append(body); m.append(d);
-    }
-    if (!shown && !outs.length) m.append(el("p", "empty", items.length ? "Nada pendente 🎉" : "Sem itens ainda."));
+    if (!shown) m.append(el("p", "empty", items.length ? "Nada pendente 🎉" : "Sem itens ainda."));
   }
 
   function row(it, showStore) {
-    const r = el("div", "item" + (it.status === "comprado" ? " done" : ""));
+    const r = el("div", "item" + (it.status === "comprado" ? " done" : "") + (it.status === "esgotado" ? " out" : ""));
     const c = el("button", "check", "✓"); c.type = "button";
     c.setAttribute("aria-label", (it.status === "comprado" ? "Desmarcar " : "Marcar comprado: ") + it.camisa + " " + it.talla);
     c.setAttribute("aria-pressed", String(it.status === "comprado"));
-    if (it.status === "esgotado") c.disabled = true;
     c.addEventListener("click", () => setStatus(it, it.status === "comprado" ? "pendente" : "comprado"));
     const w = el("div", "what");
     w.append(el("span", "nm", it.camisa + (showStore ? " · " + it.loja : "")));
