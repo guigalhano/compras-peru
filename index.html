@@ -122,8 +122,8 @@ dialog input { font: inherit; padding: 10px; border: 1px solid var(--line); bord
     <div class="prog"><i id="h-bar"></i></div>
     <div class="stats"><span id="h-left">Carregando…</span><span id="h-out"></span></div>
     <div class="chips">
-      <button type="button" id="f-falta" aria-pressed="true">Falta comprar</button>
-      <button type="button" id="f-tudo" aria-pressed="false">Tudo</button>
+      <button type="button" id="f-tudo" aria-pressed="true">Tudo</button>
+      <button type="button" id="f-falta" aria-pressed="false">Só o que falta</button>
     </div>
   </header>
   <main id="main"><p class="empty">Carregando…</p></main>
@@ -185,7 +185,7 @@ dialog input { font: inherit; padding: 10px; border: 1px solid var(--line); bord
   document.addEventListener("keydown", (e) => { if (!$("lock").hidden && /^[0-9]$/.test(e.key)) key(e.key); if (!$("lock").hidden && e.key === "Backspace") key("⌫"); });
 
   /* ---------- App ---------- */
-  let items = [], lojas = {}, cfg = { cambio: 1.689 }, entrega = null, mode = "falta";
+  let items = [], lojas = {}, cfg = { cambio: 1.689 }, entrega = null, mode = "tudo";
   const openState = {};
   let ref = null;
 
@@ -234,8 +234,9 @@ dialog input { font: inherit; padding: 10px; border: 1px solid var(--line); bord
       const all = brandAll.filter((i) => i.status !== "esgotado");
       const pend = all.filter((i) => i.status !== "comprado");
       const esg = brandAll.filter((i) => i.status === "esgotado");
-      const list = mode === "falta" ? brandAll.filter((i) => i.status !== "comprado") : brandAll;
-      if (!list.length) continue;
+      if (!brandAll.length) continue;
+      let list = mode === "falta" ? brandAll.filter((i) => i.status !== "comprado") : brandAll;
+      if (!list.length) list = brandAll;
       shown++;
       const L = lojas[name] || {};
       const t = all.reduce((a, i) => a + i.qtd, 0), g = all.filter((i) => i.status === "comprado").reduce((a, i) => a + i.qtd, 0);
