@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#b5242c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Compras Peru">
+<title>Compras Peru</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root {
+  --bg: #f6f5f3; --surface: #fff; --line: #e3dfda; --fg: #1f1b18; --muted: #6d655e;
+  --accent: #b5242c; --accent-soft: #f6e3e3;
+  --ok: #1f7a4d; --ok-soft: #dff1e7; --warn: #8a5f00; --warn-soft: #fbf0d4;
+  --bad: #a3262e; --bad-soft: #f8dfe0; --idle-soft: #e9ecef;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #151210; --surface: #201c19; --line: #38322d; --fg: #f1ece7; --muted: #a79e96;
+    --accent: #e0575d; --accent-soft: #3a1f21; --ok: #5cc690; --ok-soft: #173326;
+    --warn: #e2b44a; --warn-soft: #3a2f12; --bad: #ef7c82; --bad-soft: #3d1c1f; --idle-soft: #2b2f34; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+
+/* PIN */
+#lock { min-height: 100dvh; display: grid; place-content: center; gap: 18px; padding: 24px; text-align: center; }
+#lock h1 { margin: 0; font-size: 22px; }
+#lock p { margin: 0; color: var(--muted); }
+.dots { display: flex; gap: 14px; justify-content: center; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--muted); }
+.dots i.on { background: var(--accent); border-color: var(--accent); }
+.dots.err i { border-color: var(--bad); }
+.pad { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; justify-content: center; }
+.pad button { height: 72px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); font-size: 26px; cursor: pointer; }
+.pad button:active { background: var(--accent-soft); }
+.pad .ghost { border: 0; background: none; font-size: 15px; color: var(--muted); }
+
+/* App */
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: calc(10px + env(safe-area-inset-top)) 16px 10px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.hrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+header h1 { margin: 0; font-size: 20px; }
+header h1 span { color: var(--accent); }
+.prog { height: 8px; background: var(--idle-soft); border-radius: 4px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--ok); width: 0; transition: width .3s; }
+.stats { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); gap: 8px; }
+.chips { display: flex; gap: 8px; }
+.chips button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 14px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+main { padding: 12px 12px calc(28px + env(safe-area-inset-bottom)); display: grid; gap: 10px; max-width: 720px; margin: 0 auto; }
+.ship { font-size: 13px; color: var(--muted); padding: 0 4px; }
+
+details.brand { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+details.brand > summary { list-style: none; padding: 14px 16px; cursor: pointer; display: grid; gap: 8px; }
+details.brand > summary::-webkit-details-marker { display: none; }
+.sum1 { display: flex; align-items: center; gap: 10px; }
+.sum1 b { font-size: 18px; flex: 1; }
+.sum1 .chev { color: var(--muted); transition: transform .2s; }
+details[open] .chev { transform: rotate(90deg); }
+.badge { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.sum2 { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.mini { height: 5px; background: var(--idle-soft); border-radius: 3px; overflow: hidden; }
+.mini i { display: block; height: 100%; background: var(--ok); }
+.body { border-top: 1px solid var(--line); padding: 12px 16px 6px; display: grid; gap: 10px; }
+.alert { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 9px 11px; font-size: 13px; line-height: 1.35; }
+.info { display: grid; gap: 6px; font-size: 13px; }
+.info div { display: grid; gap: 1px; }
+.info span:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.open { display: inline-flex; justify-content: center; align-items: center; gap: 6px; text-decoration: none; font-weight: 700; color: #fff; background: var(--accent); border-radius: 10px; padding: 11px; }
+.items { display: grid; }
+.item { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+.check { width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); display: grid; place-content: center; cursor: pointer; font-size: 22px; color: transparent; }
+.item.done .check { background: var(--ok); border-color: var(--ok); color: #fff; }
+.check:disabled { cursor: default; opacity: .5; }
+.what { min-width: 0; display: grid; gap: 2px; }
+.what .nm { font-weight: 600; font-size: 15px; line-height: 1.25; }
+.item.done .nm { text-decoration: line-through; color: var(--muted); }
+.what .mt { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.tag { justify-self: start; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; }
+.tag.confirmar { background: var(--warn-soft); color: var(--warn); }
+.tag.esgotado { background: var(--bad-soft); color: var(--bad); }
+.right { text-align: right; display: grid; gap: 4px; justify-items: end; }
+.sz { font-family: var(--mono); font-weight: 800; font-size: 18px; }
+.pr { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.more { border: 0; background: none; color: var(--muted); font-size: 12px; padding: 2px 0; cursor: pointer; text-decoration: underline; }
+.empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--fg); color: var(--bg); border-radius: 999px; padding: 9px 16px; font-size: 14px; z-index: 9; }
+dialog { border: 0; border-radius: 16px; padding: 0; width: min(92vw, 380px); background: var(--surface); color: var(--fg); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog form { display: grid; gap: 8px; padding: 18px; }
+dialog h2 { margin: 0 0 4px; font-size: 16px; }
+dialog .opt { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 12px; text-align: left; cursor: pointer; font-weight: 600; }
+dialog label { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+dialog input { font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); }
+.foot { font-size: 12px; color: var(--muted); text-align: center; padding: 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<section id="lock">
+  <h1>Compras Peru</h1>
+  <p>Digite o PIN</p>
+  <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+  <div class="pad" id="pad"></div>
+</section>
+
+<div id="app" hidden>
+  <header>
+    <div class="hrow"><h1>Compras <span>Peru</span></h1><span class="num" id="h-count">—</span></div>
+    <div class="prog"><i id="h-bar"></i></div>
+    <div class="stats"><span id="h-left">Carregando…</span><span id="h-out"></span></div>
+    <div class="chips">
+      <button type="button" id="f-falta" aria-pressed="true">Falta comprar</button>
+      <button type="button" id="f-tudo" aria-pressed="false">Tudo</button>
+    </div>
+  </header>
+  <main id="main"><p class="empty">Carregando…</p></main>
+  <p class="foot" id="foot"></p>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlg-form">
+    <h2 id="dlg-title"></h2>
+    <label>Preço pago por unidade (S/)<input id="dlg-paid" inputmode="decimal" autocomplete="off"></label>
+    <button class="opt" value="comprado">✓ Comprado</button>
+    <button class="opt" value="pendente">Pendente</button>
+    <button class="opt" value="confirmar">Confirmar com a loja</button>
+    <button class="opt" value="esgotado">Esgotado</button>
+    <button class="opt" value="cancel" style="text-align:center;font-weight:400">Cancelar</button>
+  </form>
+</dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function () {
+  const PIN_HASH = "a25caab5c8fa33f2c824102113d4d401934fbd337c61567036470fdec622efa0";
+  const ROOT = "comprasPeru";
+  const STORE_ORDER = ["Marathon", "Walon", "New Athletic", "adidas", "Umbro", "Hot Bec", "Keeper One", "Palant", "EOO"];
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const sol = (v) => "S/ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const brl = (v) => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  /* ---------- PIN ---------- */
+  async function sha(s) {
+    const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+  }
+  let typed = "";
+  function drawDots(err) {
+    [...$("dots").children].forEach((d, i) => d.classList.toggle("on", i < typed.length));
+    $("dots").classList.toggle("err", !!err);
+  }
+  async function tryPin() {
+    if (await sha("compras-peru:" + typed) === PIN_HASH) {
+      try { localStorage.setItem("cp-ok", PIN_HASH); } catch (e) {}
+      unlock();
+    } else { typed = ""; drawDots(true); if (navigator.vibrate) navigator.vibrate(120); }
+  }
+  function key(k) {
+    if (k === "⌫") typed = typed.slice(0, -1);
+    else if (typed.length < 4) typed += k;
+    drawDots(false);
+    if (typed.length === 4) tryPin();
+  }
+  ["1","2","3","4","5","6","7","8","9","","0","⌫"].forEach((k) => {
+    const b = el("button", k === "⌫" ? "ghost" : "", k); b.type = "button";
+    if (!k) { b.style.visibility = "hidden"; } else b.addEventListener("click", () => key(k));
+    if (k === "⌫") b.setAttribute("aria-label", "Apagar");
+    $("pad").append(b);
+  });
+  document.addEventListener("keydown", (e) => { if (!$("lock").hidden && /^[0-9]$/.test(e.key)) key(e.key); if (!$("lock").hidden && e.key === "Backspace") key("⌫"); });
+
+  /* ---------- App ---------- */
+  let items = [], lojas = {}, cfg = { cambio: 1.689 }, entrega = null, mode = "falta";
+  const openState = {};
+  let ref = null;
+
+  function unlock() {
+    $("lock").hidden = true; $("app").hidden = false;
+    firebase.initializeApp({
+      apiKey: "AIzaSyAtge7zxANXE853dLatA-s2MKDnr8IjL0A",
+      authDomain: "sao-lourenco-5ae34.firebaseapp.com",
+      databaseURL: "https://sao-lourenco-5ae34-default-rtdb.firebaseio.com",
+      projectId: "sao-lourenco-5ae34",
+      appId: "1:14097658290:web:1e697a6e86e1361cbeb4ab"
+    });
+    ref = firebase.database().ref(ROOT);
+    ref.on("value", (snap) => {
+      const v = snap.val() || {};
+      items = Object.entries(v.itens || {}).map(([id, x]) => Object.assign({ id }, x, { qtd: Number(x.qtd) || 0, preco: Number(x.preco) || 0 }))
+        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+      lojas = {}; entrega = null;
+      for (const [id, x] of Object.entries(v.lojas || {})) { if (id === "_entrega") entrega = x; else lojas[x.nome || id] = x; }
+      if (v.config && Number(v.config.cambio)) cfg.cambio = Number(v.config.cambio);
+      render();
+    }, () => toast("Sem conexão com o banco. Tente recarregar."));
+  }
+
+  function render() {
+    let tot = 0, got = 0, left = 0, leftN = 0, out = 0;
+    for (const it of items) {
+      if (it.status === "esgotado") { out += it.qtd; continue; }
+      tot += it.qtd;
+      if (it.status === "comprado") got += it.qtd; else { left += it.preco * it.qtd; leftN += it.qtd; }
+    }
+    $("h-count").textContent = got + "/" + tot;
+    $("h-bar").style.width = (tot ? got / tot * 100 : 0) + "%";
+    $("h-left").textContent = leftN ? "Falta " + leftN + " · " + sol(left) + " (≈ " + brl(left * cfg.cambio) + ")" : "Tudo comprado";
+    $("h-out").textContent = out ? out + " esgotada" + (out > 1 ? "s" : "") : "";
+    $("foot").textContent = "Reais pelo câmbio " + cfg.cambio.toLocaleString("pt-BR") + ". Toque no quadrado para marcar; em \"mais\" muda o status ou o preço pago.";
+
+    const m = $("main"); m.replaceChildren();
+    if (entrega && entrega.nome) m.append(el("p", "ship", "Entregar para " + entrega.nome + (entrega.endereco ? " · " + entrega.endereco : "")));
+    const names = [...new Set(STORE_ORDER.concat(items.map((i) => i.loja)))];
+    let shown = 0;
+    for (const name of names) {
+      const all = items.filter((i) => i.loja === name && i.status !== "esgotado");
+      const pend = all.filter((i) => i.status !== "comprado");
+      const list = mode === "falta" ? pend : all;
+      if (!list.length) continue;
+      shown++;
+      const L = lojas[name] || {};
+      const t = all.reduce((a, i) => a + i.qtd, 0), g = all.filter((i) => i.status === "comprado").reduce((a, i) => a + i.qtd, 0);
+      const pn = pend.reduce((a, i) => a + i.qtd, 0), ps = pend.reduce((a, i) => a + i.preco * i.qtd, 0);
+      const d = el("details", "brand"); d.id = "brand-" + name.replace(/\W+/g, "-").toLowerCase();
+      if (openState[name]) d.open = true;
+      d.addEventListener("toggle", () => { openState[name] = d.open; });
+      const s = el("summary");
+      const s1 = el("div", "sum1");
+      s1.append(el("span", "chev", "›"), el("b", "", name), el("span", "badge" + (pn ? "" : " ok"), pn ? "falta " + pn : "completo"));
+      const s2 = el("div", "sum2");
+      s2.append(el("span", "num", pn ? sol(ps) + " · ≈ " + brl(ps * cfg.cambio) : "tudo comprado"), el("span", "num", g + "/" + t));
+      const mini = el("div", "mini"); const mi = el("i"); mi.style.width = (t ? g / t * 100 : 0) + "%"; mini.append(mi);
+      s.append(s1, s2, mini);
+      d.append(s);
+      const body = el("div", "body");
+      if (L.alerta && pn) body.append(el("div", "alert", L.alerta));
+      if (L.site) { const a = el("a", "open", "Abrir loja ↗"); a.href = L.site; a.target = "_blank"; a.rel = "noopener"; body.append(a); }
+      const info = el("div", "info");
+      for (const [k, lab] of [["comoComprar", "Como comprar"], ["pagamento", "Pagamento"], ["frete", "Frete"], ["lojaFisica", "Loja física"], ["contato", "Contato"]]) {
+        if (!L[k]) continue; const x = el("div"); x.append(el("span", "", lab), el("span", "", L[k])); info.append(x);
+      }
+      if (info.children.length && pn) body.append(info);
+      const box = el("div", "items");
+      for (const it of list) box.append(row(it));
+      body.append(box);
+      d.append(body);
+      m.append(d);
+    }
+    const outs = items.filter((i) => i.status === "esgotado");
+    if (outs.length) {
+      const d = el("details", "brand"); if (openState.__out) d.open = true;
+      d.addEventListener("toggle", () => { openState.__out = d.open; });
+      const s = el("summary"); const s1 = el("div", "sum1");
+      s1.append(el("span", "chev", "›"), el("b", "", "Esgotadas"), el("span", "badge", outs.reduce((a, i) => a + i.qtd, 0) + " p/ resolver"));
+      s.append(s1, el("div", "sum2", "Falar com o cliente: trocar tamanho/modelo ou devolver o sinal"));
+      d.append(s);
+      const body = el("div", "body"); const box = el("div", "items");
+      for (const it of outs) box.append(row(it, true));
+      body.append(box); d.append(body); m.append(d);
+    }
+    if (!shown && !outs.length) m.append(el("p", "empty", items.length ? "Nada pendente 🎉" : "Sem itens ainda."));
+  }
+
+  function row(it, showStore) {
+    const r = el("div", "item" + (it.status === "comprado" ? " done" : ""));
+    const c = el("button", "check", "✓"); c.type = "button";
+    c.setAttribute("aria-label", (it.status === "comprado" ? "Desmarcar " : "Marcar comprado: ") + it.camisa + " " + it.talla);
+    c.setAttribute("aria-pressed", String(it.status === "comprado"));
+    if (it.status === "esgotado") c.disabled = true;
+    c.addEventListener("click", () => setStatus(it, it.status === "comprado" ? "pendente" : "comprado"));
+    const w = el("div", "what");
+    w.append(el("span", "nm", it.camisa + (showStore ? " · " + it.loja : "")));
+    const meta = [it.pedidos, it.codigo ? "cód. " + it.codigo : "", it.obs].filter(Boolean).join(" · ");
+    if (meta) w.append(el("span", "mt", meta));
+    if (it.status === "confirmar") w.append(el("span", "tag confirmar", "Confirmar com a loja"));
+    if (it.status === "esgotado") w.append(el("span", "tag esgotado", "Esgotado"));
+    const rt = el("div", "right");
+    rt.append(el("span", "sz", it.talla + (it.qtd > 1 ? "×" + it.qtd : "")));
+    const paid = typeof it.precoPago === "number" ? it.precoPago : null;
+    rt.append(el("span", "pr", sol((paid != null && it.status === "comprado" ? paid : it.preco) * it.qtd)));
+    const mb = el("button", "more", "mais"); mb.type = "button"; mb.addEventListener("click", () => openDlg(it));
+    rt.append(mb);
+    r.append(c, w, rt);
+    return r;
+  }
+
+  function setStatus(it, st, extra) {
+    const patch = Object.assign({ status: st, atualizadoEm: new Date().toISOString() }, extra || {});
+    if (st === "comprado" && typeof it.precoPago !== "number" && !(extra && "precoPago" in extra)) patch.precoPago = it.preco;
+    if (st !== "comprado" && !(extra && "precoPago" in extra)) patch.precoPago = null;
+    ref.child("itens/" + it.id).update(patch).then(() => toast(st === "comprado" ? "Marcado como comprado" : "Status: " + st))
+      .catch(() => toast("Não salvou. Verifique a conexão."));
+  }
+
+  let dlgItem = null;
+  function openDlg(it) {
+    dlgItem = it;
+    $("dlg-title").textContent = it.camisa + " · " + it.talla;
+    $("dlg-paid").value = typeof it.precoPago === "number" ? String(it.precoPago).replace(".", ",") : "";
+    $("dlg-paid").placeholder = String(it.preco).replace(".", ",");
+    $("dlg").showModal();
+  }
+  $("dlg").addEventListener("close", () => {
+    const v = $("dlg").returnValue; if (!dlgItem || !v || v === "cancel") return;
+    const raw = $("dlg-paid").value.replace(",", ".").trim();
+    const n = raw === "" ? null : Number(raw);
+    const extra = {};
+    if (v === "comprado") extra.precoPago = (n != null && isFinite(n) && n >= 0) ? Math.round(n * 100) / 100 : dlgItem.preco;
+    setStatus(dlgItem, v, extra);
+    dlgItem = null;
+  });
+
+  let tt = null;
+  function toast(t) {
+    let x = document.querySelector(".toast"); if (!x) { x = el("div", "toast"); x.setAttribute("role", "status"); document.body.append(x); }
+    x.textContent = t; x.hidden = false; clearTimeout(tt); tt = setTimeout(() => { x.hidden = true; }, 1800);
+  }
+
+  function setMode(m) { mode = m; $("f-falta").setAttribute("aria-pressed", String(m === "falta")); $("f-tudo").setAttribute("aria-pressed", String(m !== "falta")); render(); }
+  $("f-falta").addEventListener("click", () => setMode("falta"));
+  $("f-tudo").addEventListener("click", () => setMode("tudo"));
+
+  let ok = false; try { ok = localStorage.getItem("cp-ok") === PIN_HASH; } catch (e) {}
+  if (ok) unlock();
+})();
+</script>
+</body>
+</html>
