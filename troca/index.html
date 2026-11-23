@@ -170,7 +170,7 @@ footer.bar .sum b { font-family: var(--mono); font-size: 17px; }
       const taken = r && !mine;
       const isSame = norm(x.time) === norm(L.time);
       const price = isSame ? L.total : x.preco;
-      if (price == null) continue;
+      if (price == null || taken) continue; // reservadas por outra pessoa não aparecem
       const o = { id, x, price, mine, taken, isSame };
       (isSame ? same : other).push(o);
     }
